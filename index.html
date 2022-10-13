@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Blockchain</title>
+		<style>
+			::-webkit-scrollbar {
+				width: 10px;
+			}
+
+			/* Track */
+			::-webkit-scrollbar-track {
+				background: #393e46;
+			}
+
+			/* Handle */
+			::-webkit-scrollbar-thumb {
+				background: #00adb5;
+			}
+
+			/* Handle on hover */
+			::-webkit-scrollbar-thumb:hover {
+				background: #01939b;
+			}
+
+			body {
+				background: #222831;
+				color: white;
+				font-family: Tahoma, sans-serif;
+			}
+			ul {
+				list-style: none;
+				padding: 0;
+			}
+
+			.app-title {
+				text-align: center;
+				margin-bottom: 20px;
+			}
+
+			.app-chain {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				flex-direction: column;
+				gap: 10px;
+			}
+
+			.app-action {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+			}
+
+			.app-action button {
+				padding: 10px 30px;
+				text-transform: uppercase;
+				font-weight: bold;
+				background: #00adb5;
+				color: white;
+				cursor: pointer;
+			}
+
+			.app-action button.auto {
+				background: #b52400;
+			}
+
+			.app-action button:hover {
+				opacity: 0.8;
+			}
+
+			.block {
+				background: #393e46;
+				padding: 20px 50px;
+				width: 60vw;
+			}
+
+			.block .block-head {
+				margin: 0;
+				font-size: 14px;
+			}
+
+			.block .block-data {
+				margin-top: 20px;
+				display: flex;
+				flex-direction: column;
+				padding: 0;
+				gap: 5px;
+			}
+
+			.block .block-data li {
+				display: flex;
+			}
+
+			.block .block-data li p {
+				background: #eeeeee;
+				color: black;
+				padding: 10px;
+				font-weight: bold;
+				font-size: 14px;
+				width: 150px;
+				margin: 0;
+				border-radius: 5px 0 0 5px;
+			}
+
+			.block .block-data li span {
+				background: #00adb5;
+				flex: 1;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				font-weight: bold;
+				padding: 0 20px;
+				border-radius: 0 5px 5px 0;
+			}
+
+			.list-move, /* apply transition to moving elements */
+.list-enter-active,
+.list-leave-active {
+				transition: all 0.5s ease;
+			}
+
+			.list-enter-from,
+			.list-leave-to {
+				opacity: 0;
+				transform: translateX(30px);
+			}
+
+			/* ensure leaving items are taken out of layout flow so that moving
+   animations can be calculated correctly. */
+			.list-leave-active {
+				position: absolute;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="app">
+			<h1 class="app-title">SAVK BLOCKCHAIN</h1>
+			<div class="app-action">
+				<button @click="mine">Mine One Block</button>
+				<button @click="autoMineToggle" :class="{auto: autoMineStatus}">
+					{{autoMineStatus ? 'Stop' : 'Start'}} Auto Mining
+				</button>
+			</div>
+			<ul class="app-chain">
+				<li v-for="block in chain" :key="block.index+block.timestamp">
+					<div class="block">
+						<h1 class="block-head">BLOCK #{{block.index}}</h1>
+						<ul class="block-data">
+							<li>
+								<p>TIMESTAMP</p>
+								<span>{{block.timestamp}}</span>
+							</li>
+							<li>
+								<p>NONCE</p>
+								<span>{{block.nonce}}</span>
+							</li>
+							<li>
+								<p>HASH</p>
+								<span>{{block.hash}}</span>
+							</li>
+							<li>
+								<p>PREVIOUS-HASH</p>
+								<span>{{block.prevHash}}</span>
+							</li>
+						</ul>
+					</div>
+				</li>
+			</ul>
+		</div>
+
+		<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+		<script>
+			const { createApp } = Vue;
+
+			createApp({
+				data() {
+					return {
+						chain: null,
+						autoMineStatus: false,
+						intervalId: 0,
+					};
+				},
+				methods: {
+					async mine() {
+						await fetch('/mine_block');
+						this.getChain();
+					},
+					async autoMineToggle() {
+						if (this.autoMineStatus) {
+							clearInterval(this.intervalId);
+							console.log('AUTO-MINING IS TURNED OFF');
+						} else {
+							let counter = 1;
+							console.log('AUTO-MINING IS TURNED ON');
+							this.intervalId = setInterval(async () => {
+								await this.mine();
+								console.log(`MINE - ${counter}`);
+								counter++;
+							}, 3000);
+						}
+						this.autoMineStatus = !this.autoMineStatus;
+					},
+					async getChain() {
+						const response = await fetch('/get_chain');
+						const data = await response.json();
+						console.log(data);
+						this.chain = data.chain.reverse();
+					},
+				},
+				async mounted() {
+					this.getChain();
+				},
+			}).mount('#app');
+		</script>
+	</body>
+</html>
